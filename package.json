@@ -1,0 +1,30 @@
+{
+  "name": "@sec-block/secjs-icap",
+  "version": "1.0.0",
+  "description": "utilities for handling ICAP(SEC in IBAN) encoding",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@gitlab.com/MongoX-SEC/secjs-icap.git"
+  },
+  "keywords": [
+    "secjs",
+    "blockchain",
+    "encoding",
+    "ICAP",
+    "IBAN"
+  ],
+  "author": "ppg",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://gitlab.com/MongoX-SEC/secjs-icap/issues"
+  },
+  "homepage": "https://gitlab.com/MongoX-SEC/secjs-icap#README",
+  "dependencies": {
+    "base-x": "^3.0.4",
+    "convert-hex": "^0.1.0"
+  }
+}
