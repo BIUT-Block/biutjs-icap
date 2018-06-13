@@ -1,10 +1,30 @@
-var hex = require('convert-hex')
+const hex = require('convert-hex')
 
 // For simplicity we redefine it, as the default uses lowercase
-var BASE36_ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-var bs36 = require('base-x')(BASE36_ALPHABET)
+const BASE36_ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+const bs36 = require('base-x')(BASE36_ALPHABET)
 
-var ICAP = {}
+const ICAP = {}
+
+ICAP.encodeBBAN = function (bban) {
+  if (typeof bban === 'object') {
+    if (bban.asset.length !== 3 ||
+        bban.institution.length !== 4 ||
+        bban.client.length !== 9) {
+      throw new Error('Invalid \'indirect\' Ethereum BBAN')
+    }
+    return [ bban.asset, bban.institution, bban.client ].join('').toUpperCase()
+  } else if ((bban.length === 42) && (bban[0] === '0') && (bban[1] === 'x')) {
+    // Workaround for base-x, see https://github.com/cryptocoinjs/base-x/issues/18
+    if ((bban[2] === '0') && (bban[3] === '0')) {
+      bban = '0x' + bban.slice(4)
+    }
+
+    return bs36.encode(hex.hexToBytes(bban))
+  } else {
+    throw new Error('Not a valid input for Ethereum BBAN')
+  }
+}
 
 ICAP.decodeBBAN = function (bban) {
   var length = bban.length
@@ -30,26 +50,6 @@ ICAP.decodeBBAN = function (bban) {
     }
   } else {
     throw new Error('Not a valid Ethereum BBAN')
-  }
-}
-
-ICAP.encodeBBAN = function (bban) {
-  if (typeof bban === 'object') {
-    if (bban.asset.length !== 3 ||
-      bban.institution.length !== 4 ||
-      bban.client.length !== 9) {
-      throw new Error('Invalid \'indirect\' Ethereum BBAN')
-    }
-    return [bban.asset, bban.institution, bban.client].join('').toUpperCase()
-  } else if ((bban.length === 42) && (bban[0] === '0') && (bban[1] === 'x')) {
-    // Workaround for base-x, see https://github.com/cryptocoinjs/base-x/issues/18
-    if ((bban[2] === '0') && (bban[3] === '0')) {
-      bban = '0x' + bban.slice(4)
-    }
-
-    return bs36.encode(hex.hexToBytes(bban))
-  } else {
-    throw new Error('Not a valid input for Ethereum BBAN')
   }
 }
 
@@ -88,17 +88,17 @@ function mod9710 (input) {
 ICAP.encode = function (bban, print) {
   bban = ICAP.encodeBBAN(bban)
 
-  var checksum = 98 - mod9710(prepare('XE00' + bban))
+  var checksum = 98 - mod9710(prepare('MO00' + bban))
 
   // format into 2 digits
   checksum = ('0' + checksum).slice(-2)
 
-  var iban = 'XE' + checksum + bban
+  var iban = 'MO' + checksum + bban
   if (print === true) {
     // split a group of 4 chars with spaces
     iban = iban.replace(/(.{4})/g, '$1 ')
   }
-  console.log(iban)
+
   return iban
 }
 
@@ -133,7 +133,7 @@ ICAP.fromAddress = function (address, print, nonstd) {
   if ((ret.replace(' ', '').length !== 34) && (nonstd !== true)) {
     throw new Error('Supplied address will result in invalid an IBAN')
   }
-  console.log(ret)
+
   return ret
 }
 
@@ -144,7 +144,6 @@ ICAP.fromAddress = function (address, print, nonstd) {
  * @returns {String}
  */
 ICAP.fromAsset = function (asset, print) {
-
   return ICAP.encode(asset, print)
 }
 
@@ -159,7 +158,6 @@ ICAP.toAddress = function (iban) {
   if (typeof address !== 'string') {
     throw new Error('Not an address-encoded ICAP')
   }
-  console.log(address)
   return address
 }
 
