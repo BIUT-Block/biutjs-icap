@@ -1,5 +1,7 @@
 const hex = require('convert-hex')
-// For simplicity we redefine it, as the default uses lowercase
+/**
+ * For simplicity we redefine it, as the default uses lowercase
+ */
 const BASE36_ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 const bs36 = require('base-x')(BASE36_ALPHABET)
 const ICAP = {}
@@ -9,18 +11,20 @@ ICAP.encodeBBAN = function (bban) {
     if (bban.asset.length !== 3 ||
         bban.institution.length !== 4 ||
         bban.client.length !== 9) {
-      throw new Error('Invalid \'indirect\' Ethereum BBAN')
+      throw new Error('Invalid \'indirect\' SEC BBAN')
     }
     return [ bban.asset, bban.institution, bban.client ].join('').toUpperCase()
   } else if ((bban.length === 42) && (bban[0] === '0') && (bban[1] === 'x')) {
-    // Workaround for base-x, see https://github.com/cryptocoinjs/base-x/issues/18
+    /**
+     * Workaround for base-x, see https://github.com/cryptocoinjs/base-x/issues/18
+     */
     if ((bban[2] === '0') && (bban[3] === '0')) {
       bban = '0x' + bban.slice(4)
     }
 
     return bs36.encode(hex.hexToBytes(bban))
   } else {
-    throw new Error('Not a valid input for Ethereum BBAN')
+    throw new Error('Not a valid input for SEC BBAN')
   }
 }
 
@@ -29,12 +33,16 @@ ICAP.decodeBBAN = function (bban) {
   if (length === 30 || length === 31) {
     var tmp = hex.bytesToHex(bs36.decode(bban))
 
-    // FIXME: horrible padding code
+    /**
+     * FIXME: horrible padding code
+     */
     while (tmp.length < 40) {
       tmp = '0' + tmp
     }
 
-    // NOTE: certain tools include an extra leading 0, drop that
+    /**
+     * NOTE: certain tools include an extra leading 0, drop that
+     */
     if ((tmp.length === 42) && (tmp[0] === '0') && (tmp[1] === '0')) {
       tmp = tmp.slice(2)
     }
@@ -47,23 +55,35 @@ ICAP.decodeBBAN = function (bban) {
       client: bban.slice(7, 16)
     }
   } else {
-    throw new Error('Not a valid Ethereum BBAN')
+    throw new Error('Not a valid SEC BBAN')
   }
 }
 
-// ISO13616 reordering and letter translation
-// NOTE: we assume input is uppercase only
-// based off code from iban.js
+/**
+ * ISO13616 reordering and letter translation
+ * NOTE: we assume input is uppercase only
+ * based off code from iban.js
+ * @param {string} iban 
+ */
+
 function prepare (iban) {
-  // move front to the back
+  /**
+   * move front to the back
+   */
   iban = iban.slice(4) + iban.slice(0, 4)
 
-  // translate letters to numbers
+  /**
+   * translate letters to numbers
+   */
   return iban.split('').map(function (n) {
     var code = n.charCodeAt(0)
-    // 65 == A, 90 == Z in ASCII
+    /**
+     * 65 == A, 90 == Z in ASCII
+     */
     if (code >= 65 && code <= 90) {
-      // A = 10, B = 11, ... Z = 35
+      /**
+       * A = 10, B = 11, ... Z = 35
+       */
       return code - 65 + 10
     } else {
       return n
@@ -71,40 +91,59 @@ function prepare (iban) {
   }).join('')
 }
 
-// Calculate ISO7064 mod 97-10
-// NOTE: assumes all numeric input string
+/**
+ * Calculate ISO7064 mod 97-10
+ * NOTE: assumes all numeric input string
+ * @param {any} input 
+ */
 function mod9710 (input) {
   var m = 0
   for (var i = 0; i < input.length; i++) {
     m *= 10
-    m += input.charCodeAt(i) - 48 // parseInt()
+    m += input.charCodeAt(i) - 48 
     m %= 97
   }
   return m
 }
 
+/**
+ * @param  {string} bban
+ * @param  {any} print
+ */
 ICAP.encode = function (bban, print) {
   bban = ICAP.encodeBBAN(bban)
 
   var checksum = 98 - mod9710(prepare('MO00' + bban))
 
-  // format into 2 digits
+  /**
+   * format into 2 digits
+   */
   checksum = ('0' + checksum).slice(-2)
 
   var iban = 'MO' + checksum + bban
   if (print === true) {
-    // split a group of 4 chars with spaces
+    /**
+     * split a group of 4 chars with spaces
+     */
     iban = iban.replace(/(.{4})/g, '$1 ')
   }
 
   return iban
 }
-
+/**
+ * decode IBAN to Address
+ * @param  {string} iban
+ * @param  {any} novalidity
+ */
 ICAP.decode = function (iban, novalidity) {
-  // change from 'print format' to 'electronic format', e.g. remove spaces
+  /**
+   * change from 'print format' to 'electronic format', e.g. remove spaces
+   */
   iban = iban.replace(/\ /g, '')
 
-  // check for validity
+  /**
+   * check for validity
+   */
   if (!novalidity) {
     if (iban.slice(0, 2) !== 'MO') {
       throw new Error('Not in SEC ICAP format')
@@ -118,12 +157,13 @@ ICAP.decode = function (iban, novalidity) {
   return ICAP.decodeBBAN(iban.slice(4, 35))
 }
 
-/*
+
+/**
  * Convert Ethereum address to ICAP
  * @method fromAddress
- * @param {String} address Address as a hex string.
- * @param {bool} nonstd Accept address which will result in non-standard IBAN
- * @returns {String}
+ * @param  {string} address Address as a hex string
+ * @param  {bool} nonstd Accept address which will result in non-standard IBAN
+ * @returns {string}
  */
 ICAP.fromAddress = function (address, print, nonstd) {
   var ret = ICAP.encode(address, print)
@@ -135,21 +175,21 @@ ICAP.fromAddress = function (address, print, nonstd) {
   return ret
 }
 
-/*
+/**
  * Convert asset into ICAP
  * @method fromAsset
- * @param {Object} asset Asset object, must contain the fields asset, institution and client
- * @returns {String}
+ * @param  {Object} asset Asset object, must contain the fields asset, institution and client
+ * @param  {string} print
+ * @returns {string}
  */
 ICAP.fromAsset = function (asset, print) {
   return ICAP.encode(asset, print)
 }
 
-/*
- * Convert an ICAP into an address
+/**
  * @method toAddress
- * @param {String} iban IBAN/ICAP, must have an address encoded
- * @returns {String}
+ * @param {string} iban IBAN/ICAP, must have an address encoded
+ * @returns {string}
  */
 ICAP.toAddress = function (iban) {
   var address = ICAP.decode(iban)
@@ -159,11 +199,11 @@ ICAP.toAddress = function (iban) {
   return address
 }
 
-/*
+/**
  * Convert an ICAP into an asset
  * @method toAsset
- * @param {String} iban IBAN/ICAP, must have an asset encoded
- * @returns {Object}
+ * @param {string} iban 
+ * @returns {object}
  */
 ICAP.toAsset = function (iban) {
   var asset = ICAP.decode(iban)
