@@ -1,23 +1,23 @@
 const ICAP = require('./index')
 
-// let iban = ICAP.fromAsset({
-//   asset: 'ETH',
-//   institution: 'XREG',
-//   client: 'GAVOFYORK'
-// })
+let iban = ICAP.fromAsset({
+  asset: 'SEC',
+  institution: 'XREG',
+  client: 'GAVOFYORK'
+})
 // returns 'XE81ETHXREGGAVOFYORK'
-// console.log(`IBAN: ${iban} Length: ${iban.length}`)
-// console.log('*******************************************************************************')
+console.log(`IBAN: ${iban} Length: ${iban.length}`)
+console.log('*******************************************************************************')
 
-// let asset = ICAP.toAsset('XE81ETHXREGGAVOFYORK')
+let asset = ICAP.toAsset('MO73SECXREGGAVOFYORK')
 // returns {
-//   asset: 'ETH',
+//   asset: 'SEC',
 //   institution: 'XREG',
 //   client: 'GAVOFYORK'
 // }
-//console.log(asset)
-//console.log('*******************************************************************************')
-//console.log('###############################################################################')
+console.log(asset)
+console.log('*******************************************************************************')
+console.log('###############################################################################')
 
 
 let ret = ICAP.fromAddress('0x00c5496aee77c1ba1f0854206a26dda82a81d6d8')
