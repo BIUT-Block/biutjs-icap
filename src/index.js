@@ -4,9 +4,9 @@ const hex = require('convert-hex')
  */
 const BASE36_ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 const bs36 = require('base-x')(BASE36_ALPHABET)
-const ICAP = {}
+const secIcap = {}
 
-ICAP.encodeBBAN = function (bban) {
+secIcap.encodeBBAN = function (bban) {
   if (typeof bban === 'object') {
     if (bban.asset.length !== 3 ||
         bban.institution.length !== 4 ||
@@ -28,7 +28,7 @@ ICAP.encodeBBAN = function (bban) {
   }
 }
 
-ICAP.decodeBBAN = function (bban) {
+secIcap.decodeBBAN = function (bban) {
   var length = bban.length
   if (length === 30 || length === 31) {
     var tmp = hex.bytesToHex(bs36.decode(bban))
@@ -110,8 +110,8 @@ function mod9710 (input) {
  * @param  {string} bban
  * @param  {any} print
  */
-ICAP.encode = function (bban, print) {
-  bban = ICAP.encodeBBAN(bban)
+secIcap.encode = function (bban, print) {
+  bban = secIcap.encodeBBAN(bban)
 
   var checksum = 98 - mod9710(prepare('MO00' + bban))
 
@@ -135,7 +135,7 @@ ICAP.encode = function (bban, print) {
  * @param  {string} iban
  * @param  {any} novalidity
  */
-ICAP.decode = function (iban, novalidity) {
+secIcap.decode = function (iban, novalidity) {
   /**
    * change from 'print format' to 'electronic format', e.g. remove spaces
    */
@@ -146,7 +146,7 @@ ICAP.decode = function (iban, novalidity) {
    */
   if (!novalidity) {
     if (iban.slice(0, 2) !== 'MO') {
-      throw new Error('Not in SEC ICAP format')
+      throw new Error('Not in SEC secIcap format')
     }
 
     if (mod9710(prepare(iban)) !== 1) {
@@ -154,19 +154,19 @@ ICAP.decode = function (iban, novalidity) {
     }
   }
 
-  return ICAP.decodeBBAN(iban.slice(4, 35))
+  return secIcap.decodeBBAN(iban.slice(4, 35))
 }
 
 
 /**
- * Convert Ethereum address to ICAP
+ * Convert Ethereum address to secIcap
  * @method fromAddress
  * @param  {string} address Address as a hex string
  * @param  {bool} nonstd Accept address which will result in non-standard IBAN
  * @returns {string}
  */
-ICAP.fromAddress = function (address, print, nonstd) {
-  var ret = ICAP.encode(address, print)
+secIcap.fromAddress = function (address, print, nonstd) {
+  var ret = secIcap.encode(address, print)
 
   if ((ret.replace(' ', '').length !== 34) && (nonstd !== true)) {
     throw new Error('Supplied address will result in invalid an IBAN')
@@ -176,68 +176,68 @@ ICAP.fromAddress = function (address, print, nonstd) {
 }
 
 /**
- * Convert asset into ICAP
+ * Convert asset into secIcap
  * @method fromAsset
  * @param  {Object} asset Asset object, must contain the fields asset, institution and client
  * @param  {string} print
  * @returns {string}
  */
-ICAP.fromAsset = function (asset, print) {
-  return ICAP.encode(asset, print)
+secIcap.fromAsset = function (asset, print) {
+  return secIcap.encode(asset, print)
 }
 
 /**
  * @method toAddress
- * @param {string} iban IBAN/ICAP, must have an address encoded
+ * @param {string} iban IBAN/secIcap, must have an address encoded
  * @returns {string}
  */
-ICAP.toAddress = function (iban) {
-  var address = ICAP.decode(iban)
+secIcap.toAddress = function (iban) {
+  var address = secIcap.decode(iban)
   if (typeof address !== 'string') {
-    throw new Error('Not an address-encoded ICAP')
+    throw new Error('Not an address-encoded secIcap')
   }
   return address
 }
 
 /**
- * Convert an ICAP into an asset
+ * Convert an secIcap into an asset
  * @method toAsset
  * @param {string} iban 
  * @returns {object}
  */
-ICAP.toAsset = function (iban) {
-  var asset = ICAP.decode(iban)
+secIcap.toAsset = function (iban) {
+  var asset = secIcap.decode(iban)
   if (typeof asset !== 'object') {
-    throw new Error('Not an asset-encoded ICAP')
+    throw new Error('Not an asset-encoded secIcap')
   }
   return asset
 }
 
-ICAP.isICAP = function (iban) {
+secIcap.issecIcap = function (iban) {
   try {
-    ICAP.decode(iban)
+    secIcap.decode(iban)
     return true
   } catch (e) {
     return false
   }
 }
 
-ICAP.isAddress = function (iban) {
+secIcap.isAddress = function (iban) {
   try {
-    ICAP.toAddress(iban)
+    secIcap.toAddress(iban)
     return true
   } catch (e) {
     return false
   }
 }
 
-ICAP.isAsset = function (iban) {
+secIcap.isAsset = function (iban) {
   try {
-    ICAP.toAsset(iban)
+    secIcap.toAsset(iban)
     return true
   } catch (e) {
     return false
   }
 }
 
-module.exports = ICAP
+module.exports = secIcap
